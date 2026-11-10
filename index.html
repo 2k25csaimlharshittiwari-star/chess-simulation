@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grandmaster Chess & 4D AI Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="emerald">
+
+  <!-- Background 4D Hypercube & Quantum Dimension Canvas -->
+  <canvas id="four-d-canvas"></canvas>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-container">
+      <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <h1>Grandmaster Chess & 4D Simulator</h1>
+      <span class="badge" id="mode-badge">Human vs AI</span>
+      
+      <!-- Live Recording Status Indicator (Hidden by default, only visible when user enables recording) -->
+      <span class="rec-badge" id="rec-badge" style="display: none;" title="Match is actively being recorded">
+        <span class="rec-dot"></span>
+        <span id="rec-time-text">REC 00:00</span>
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <!-- Unified Dimension Selector: Choose 2D, 3D, or 4D -->
+      <select id="dimension-select" title="Choose View Dimension (2D, 3D, or 4D)">
+        <option value="2d">2D Classic</option>
+        <option value="3d">3D Isometric</option>
+        <option value="4d">4D Hypercube</option>
+      </select>
+
+      <!-- Territory Heatmap Toggle -->
+      <button class="btn btn-secondary" id="btn-heatmap" title="Toggle Territory Control Heatmap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3a9 9 0 0 0 0 18v-9h9"/>
+        </svg>
+        Heatmap
+      </button>
+
+      <!-- User-Controlled Match Recording Toggle (OFF by default) -->
+      <button class="btn btn-secondary" id="btn-toggle-record" title="Click to start/stop match recording">
+        <span id="record-dot-indicator" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-right: 4px;"></span>
+        <span id="record-btn-text">Record Match</span>
+      </button>
+
+      <!-- Game Review Button -->
+      <button class="btn btn-primary" id="btn-open-review" title="Review Match & Coach Analysis">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Review Game
+      </button>
+
+      <!-- Theme Selector -->
+      <select id="theme-selector" title="Board Theme">
+        <option value="emerald">Emerald Theme</option>
+        <option value="wood">Classic Wood</option>
+        <option value="slate">Midnight Slate</option>
+        <option value="cyber">Cyber Neon</option>
+      </select>
+
+      <!-- Flip Board -->
+      <button class="btn btn-secondary" id="btn-flip" title="Flip Board Perspective">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+        </svg>
+        Flip
+      </button>
+
+      <!-- Sound Toggle -->
+      <button class="btn btn-secondary" id="btn-sound" title="Toggle Sound">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="sound-icon">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        <span id="sound-label">Sound On</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <main class="app-container">
+    
+    <!-- Left: Evaluation Bar -->
+    <div class="eval-wrapper">
+      <div class="eval-bar-container" title="Evaluation Bar (White advantage up, Black down)">
+        <div class="eval-fill-black" id="eval-black" style="height: 50%;"></div>
+        <div class="eval-fill-white" id="eval-white" style="height: 50%;"></div>
+      </div>
+      <div class="eval-text" id="eval-label">0.0</div>
+    </div>
+
+    <!-- Center: Chessboard & Players -->
+    <div class="board-section">
+      <!-- Black Player Bar -->
+      <div class="player-bar" id="black-bar">
+        <div class="player-info">
+          <div class="player-avatar black">B</div>
+          <div>
+            <div class="player-name" id="black-name">Stockfish Lite (AI)</div>
+            <div class="turn-pill" id="black-turn-pill">TURN</div>
+          </div>
+        </div>
+        <div class="captured-tray" id="black-captured">
+          <div class="pieces-list"></div>
+          <span class="material-lead" id="black-lead"></span>
+        </div>
+      </div>
+
+      <!-- 3D / 4D Perspective Wrapper -->
+      <div class="board-wrapper">
+        <div class="board-container" id="board-container">
+          <!-- Canvas for Particles & Visual Shockwaves -->
+          <canvas class="fx-canvas" id="fx-canvas"></canvas>
+          
+          <div class="chessboard" id="chessboard"></div>
+          
+          <!-- Game Over Banner -->
+          <div class="game-overlay" id="game-overlay">
+            <h2 class="overlay-title" id="overlay-title">Checkmate!</h2>
+            <p class="overlay-subtitle" id="overlay-subtitle">White wins by checkmate.</p>
+            <div class="btn-group" style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btn-restart-overlay">Play Again</button>
+              <button class="btn btn-secondary" id="btn-overlay-review">📊 Game Review</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- White Player Bar -->
+      <div class="player-bar" id="white-bar">
+        <div class="player-info">
+          <div class="player-avatar white">W</div>
+          <div>
+            <div class="player-name" id="white-name">Human (You)</div>
+            <div class="turn-pill" id="white-turn-pill">TURN</div>
+          </div>
+        </div>
+        <div class="captured-tray" id="white-captured">
+          <div class="pieces-list"></div>
+          <span class="material-lead" id="white-lead"></span>
+        </div>
+      </div>
+
+      <!-- Live AI Commentary Ticker Box -->
+      <div class="commentary-card" id="commentary-card">
+        <div class="commentary-beacon"></div>
+        <div class="commentary-text" id="commentary-text">Game started. Waiting for White's opening move...</div>
+      </div>
+    </div>
+
+    <!-- Right: Controls & History -->
+    <aside class="side-panel">
+      <!-- Mode Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-play">Play</button>
+        <button class="tab-btn" data-tab="tab-sim">AI Simulation</button>
+        <button class="tab-btn" data-tab="tab-scenarios">Scenarios & 960</button>
+      </div>
+
+      <!-- TAB 1: Play Mode -->
+      <div class="tab-content active" id="tab-play">
+        <div class="control-group">
+          <label>Game Mode</label>
+          <select id="game-mode-select">
+            <option value="pve-white">Play White vs Computer</option>
+            <option value="pve-black">Play Black vs Computer</option>
+            <option value="pvp">Pass & Play (2 Players)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>Game Variant</label>
+          <select id="variant-select">
+            <option value="standard">Standard Chess Rules</option>
+            <option value="koth">King of the Hill (Occupy 4 Center Squares)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>AI Difficulty</label>
+          <select id="ai-difficulty">
+            <option value="1">Beginner (Depth 1)</option>
+            <option value="2">Casual (Depth 2)</option>
+            <option value="3" selected>Intermediate (Depth 3 + Quiescence)</option>
+            <option value="4">Hard (Depth 4 + Tactical)</option>
+          </select>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="btn-undo">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l6-6m-6 6l6 6"/>
+            </svg>
+            Undo
+          </button>
+          <button class="btn btn-danger" id="btn-reset">New Game</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: AI vs AI Simulation Mode -->
+      <div class="tab-content" id="tab-sim">
+        <div class="sim-box">
+          <div class="sim-status">
+            <span>
+              <span class="sim-indicator" id="sim-indicator"></span>
+              <strong id="sim-state-text">Ready</strong>
+            </span>
+            <span id="sim-stats-eval" style="font-weight: bold; color: var(--accent-color);">0.0</span>
+          </div>
+
+          <div class="control-group">
+            <label>White AI Level</label>
+            <select id="sim-white-level">
+              <option value="1">Level 1 (Beginner)</option>
+              <option value="2">Level 2 (Casual)</option>
+              <option value="3" selected>Level 3 (Intermediate)</option>
+              <option value="4">Level 4 (Tactical Master)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label>Black AI Level</label>
+            <select id="sim-black-level">
+              <option value="1">Level 1 (Beginner)</option>
+              <option value="2">Level 2 (Casual)</option>
+              <option value="3" selected>Level 3 (Intermediate)</option>
+              <option value="4">Level 4 (Tactical Master)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label>Move Speed: <span id="speed-label">600ms</span></label>
+            <input type="range" id="sim-speed" min="100" max="2500" step="100" value="600">
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-sim-play">Start Simulation</button>
+            <button class="btn btn-secondary" id="btn-sim-step">Step 1 Move</button>
+          </div>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">
+          <strong>Simulation Insights:</strong>
+          <div>Moves played: <span id="sim-moves-count">0</span></div>
+          <div>Last Search Depth: <span id="sim-last-depth">-</span></div>
+          <div>Nodes Evaluated: <span id="sim-nodes-count">0</span></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Scenarios & 960 -->
+      <div class="tab-content" id="tab-scenarios">
+        <div class="control-group">
+          <label>Fischer Random (Chess960)</label>
+          <button class="btn btn-primary" id="btn-chess960" style="width: 100%;">
+            🎲 Generate Random 960 Setup
+          </button>
+        </div>
+
+        <div class="control-group" style="margin-top: 0.5rem;">
+          <label>Preset Scenarios</label>
+          <select id="preset-scenarios">
+            <option value="standard">Standard Opening</option>
+            <option value="scholars-mate">Scholar's Mate Threat</option>
+            <option value="opera-game">Morphy's Opera Game (Tactical)</option>
+            <option value="endgame-kp">Endgame: King & Pawn</option>
+            <option value="endgame-kr">Endgame: King & Rook Checkmate</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" id="btn-load-preset">Load Scenario</button>
+
+        <div class="control-group" style="margin-top: 0.5rem;">
+          <label>FEN String</label>
+          <input type="text" id="fen-input" placeholder="Paste or view FEN">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="btn-load-fen">Load FEN</button>
+          <button class="btn btn-secondary" id="btn-copy-fen">Copy FEN</button>
+        </div>
+      </div>
+
+      <!-- Move History & Advantage Timeline -->
+      <div style="display: flex; flex-direction: column; flex: 1; min-height: 140px; gap: 0.5rem;">
+        <label style="margin-bottom: 0;">Move History</label>
+        <div class="move-history-container" id="history-container">
+          <table class="move-table">
+            <thead>
+              <tr>
+                <th style="width: 20%;">#</th>
+                <th style="width: 40%;">White</th>
+                <th style="width: 40%;">Black</th>
+              </tr>
+            </thead>
+            <tbody id="move-history-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Live Advantage Timeline Graph -->
+        <div class="eval-graph-card">
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-secondary); font-weight: 600;">
+            <span>Advantage Timeline</span>
+            <span id="graph-lead-text">Equilibrium (0.0)</span>
+          </div>
+          <canvas class="eval-graph-canvas" id="eval-graph-canvas"></canvas>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Game Review & Match Analysis Modal -->
+  <div class="review-modal" id="review-modal">
+    <div class="review-container">
+      <div class="review-header">
+        <div>
+          <h2>🎬 Post-Game Review & Analysis</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">AI Coach Accuracy & Tactical Breakdown</p>
+        </div>
+        <button class="btn btn-secondary" id="btn-close-review">✕ Close</button>
+      </div>
+
+      <!-- Accuracy Rings -->
+      <div class="accuracy-cards">
+        <div class="accuracy-card">
+          <div class="accuracy-circle" id="review-white-acc" style="border-color: #38bdf8;">--%</div>
+          <div>
+            <div style="font-weight: 700; font-size: 1rem;">White Accuracy</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);" id="review-white-desc">Calculating...</div>
+          </div>
+        </div>
+        <div class="accuracy-card">
+          <div class="accuracy-circle" id="review-black-acc" style="border-color: #c084fc;">--%</div>
+          <div>
+            <div style="font-weight: 700; font-size: 1rem;">Black Accuracy</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);" id="review-black-desc">Calculating...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coach Executive Summary -->
+      <div class="coach-box" id="review-coach-summary">
+        Review is analyzing moves...
+      </div>
+
+      <!-- Move Quality Breakdown -->
+      <div class="breakdown-grid" id="review-breakdown-grid">
+        <div class="breakdown-item"><span>💎 Brilliant</span><strong id="count-brilliant" style="color: #06b6d4;">0</strong></div>
+        <div class="breakdown-item"><span>⭐ Best Move</span><strong id="count-best" style="color: #10b981;">0</strong></div>
+        <div class="breakdown-item"><span>✓ Excellent</span><strong id="count-excellent" style="color: #38bdf8;">0</strong></div>
+        <div class="breakdown-item"><span>?! Inaccuracy</span><strong id="count-inaccuracy" style="color: #facc15;">0</strong></div>
+        <div class="breakdown-item"><span>? Mistake</span><strong id="count-mistake" style="color: #fb923c;">0</strong></div>
+        <div class="breakdown-item"><span>?? Blunder</span><strong id="count-blunder" style="color: #ef4444;">0</strong></div>
+      </div>
+
+      <!-- Interactive Replay Scrubber & Theater -->
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+        <label>Interactive Game Replay Theater</label>
+        <div class="replay-bar">
+          <button class="btn btn-secondary" id="btn-replay-prev" title="Previous Move">⏮️</button>
+          <button class="btn btn-primary" id="btn-replay-play" title="Play / Pause Replay">▶️ Play</button>
+          <button class="btn btn-secondary" id="btn-replay-next" title="Next Move">⏭️</button>
+          <input type="range" class="replay-scrubber" id="replay-scrubber" min="0" max="0" value="0">
+          <span style="font-size: 0.82rem; font-weight: 700; min-width: 65px;" id="replay-move-label">Move 0/0</span>
+        </div>
+        <div style="font-size: 0.85rem; color: #bae6fd; font-style: italic; min-height: 22px;" id="replay-coach-note">
+          Scrub through or play the match to review every move!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pawn Promotion Modal -->
+  <div class="promo-modal" id="promo-modal">
+    <div class="promo-content">
+      <h3>Pawn Promotion</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary);">Choose piece to promote your pawn:</p>
+      <div class="promo-pieces" id="promo-options"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="pieces.js"></script>
+  <script src="audio.js"></script>
+  <script src="fx.js"></script>
+  <script src="heatmap.js"></script>
+  <script src="commentary.js"></script>
+  <script src="eval-graph.js"></script>
+  <script src="four-d.js"></script>
+  <script src="recorder-review.js"></script>
+  <script src="chess-engine.js"></script>
+  <script src="ai.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
